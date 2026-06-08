@@ -67,28 +67,20 @@ def reorder_for_llm(chunks: list[dict]) -> list[dict]:
 
     Input order (by score):  [1, 2, 3, 4, 5]
     Output order:            [1, 3, 5, 4, 2]
-    (best first, worst in middle, second-best last)
-
-    Args:
-        chunks: List sorted by score descending (from retrieval)
-
-    Returns:
-        List reordered để maximize LLM attention.
     """
-    # TODO: Implement reordering
-    #
-    # if len(chunks) <= 2:
-    #     return chunks
-    #
-    # # Split into first half (important → đầu) and second half (important → cuối)
-    # reordered = []
-    # for i in range(0, len(chunks), 2):
-    #     reordered.append(chunks[i])  # Odd positions go first
-    # for i in range(len(chunks) - 1 - (len(chunks) % 2 == 0), 0, -2):
-    #     reordered.append(chunks[i])  # Even positions go last (reversed)
-    #
-    # return reordered
-    raise NotImplementedError("Implement reorder_for_llm")
+    if len(chunks) <= 2:
+        return chunks
+
+    reordered = []
+    # Các phần tử lẻ ở vị trí index chẵn (0, 2, 4...) đưa lên đầu
+    for i in range(0, len(chunks), 2):
+        reordered.append(chunks[i])
+    
+    # Các phần tử chẵn ở vị trí index lẻ (..., 3, 1) đưa về cuối (đảo ngược thứ tự)
+    for i in range(len(chunks) - 1 - (len(chunks) % 2 == 0), 0, -2):
+        reordered.append(chunks[i])
+
+    return reordered
 
 
 # =============================================================================
@@ -99,25 +91,16 @@ def format_context(chunks: list[dict]) -> str:
     """
     Format chunks thành context string cho prompt.
     Mỗi chunk có label source để LLM có thể cite.
-
-    Args:
-        chunks: List of {'content': str, 'metadata': dict, 'score': float}
-
-    Returns:
-        Formatted context string.
     """
-    # TODO: Implement context formatting
-    #
-    # context_parts = []
-    # for i, chunk in enumerate(chunks, 1):
-    #     source = chunk.get("metadata", {}).get("source", f"Source {i}")
-    #     doc_type = chunk.get("metadata", {}).get("type", "unknown")
-    #     context_parts.append(
-    #         f"[Document {i} | Source: {source} | Type: {doc_type}]\n"
-    #         f"{chunk['content']}\n"
-    #     )
-    # return "\n---\n".join(context_parts)
-    raise NotImplementedError("Implement format_context")
+    context_parts = []
+    for i, chunk in enumerate(chunks, 1):
+        source = chunk.get("metadata", {}).get("source", f"Source {i}")
+        doc_type = chunk.get("metadata", {}).get("type", "unknown")
+        context_parts.append(
+            f"[Document {i} | Source: {source} | Type: {doc_type}]\n"
+            f"{chunk['content']}\n"
+        )
+    return "\n---\n".join(context_parts)
 
 
 # =============================================================================
@@ -126,63 +109,43 @@ def format_context(chunks: list[dict]) -> str:
 
 def generate_with_citation(query: str, top_k: int = TOP_K) -> dict:
     """
-    End-to-end RAG generation có citation.
-
-    Pipeline:
-        1. Retrieve relevant chunks
-        2. Reorder để tránh lost in the middle
-        3. Format context với source labels
-        4. Build prompt (system + context + query)
-        5. Call LLM
-        6. Return answer + sources
-
-    Args:
-        query: Câu hỏi của user
-
-    Returns:
-        {
-            'answer': str,           # Câu trả lời có citation
-            'sources': list[dict],   # Các chunks đã dùng
-            'retrieval_source': str  # 'hybrid' hoặc 'pageindex'
-        }
+    End-to-end RAG generation có citation sử dụng Gemini Flash API.
     """
-    # TODO: Implement generation pipeline
-    #
-    # # Step 1: Retrieve
-    # chunks = retrieve(query, top_k=top_k)
-    #
-    # # Step 2: Reorder
-    # reordered = reorder_for_llm(chunks)
-    #
-    # # Step 3: Format context
-    # context = format_context(reordered)
-    #
-    # # Step 4: Build prompt
-    # user_message = f"""Context:\n{context}\n\n---\n\nQuestion: {query}"""
-    #
-    # # Step 5: Call LLM
-    # from openai import OpenAI
-    # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    #
-    # response = client.chat.completions.create(
-    #     model="gpt-4o-mini",
-    #     messages=[
-    #         {"role": "system", "content": SYSTEM_PROMPT},
-    #         {"role": "user", "content": user_message}
-    #     ],
-    #     temperature=TEMPERATURE,
-    #     top_p=TOP_P,
-    # )
-    #
-    # answer = response.choices[0].message.content
-    #
-    # # Step 6: Return
-    # return {
-    #     "answer": answer,
-    #     "sources": chunks,
-    #     "retrieval_source": chunks[0].get("source", "hybrid") if chunks else "none"
-    # }
-    raise NotImplementedError("Implement generate_with_citation")
+    # Step 1: Retrieve
+    chunks = retrieve(query, top_k=top_k)
+
+    # Step 2: Reorder
+    reordered = reorder_for_llm(chunks)
+
+    # Step 3: Format context
+    context = format_context(reordered)
+
+    # Step 4: Build prompt
+    user_message = f"Context:\n{context}\n\n---\n\nQuestion: {query}"
+
+    # Step 5: Call LLM
+    from .gemini_client import generate_content
+    try:
+        answer = generate_content(
+            prompt=user_message,
+            system_instruction=SYSTEM_PROMPT,
+            temperature=TEMPERATURE,
+            top_p=TOP_P
+        )
+    except Exception as e:
+        print(f"⚠ Lỗi khi gọi Gemini Flash sinh câu trả lời: {e}")
+        raise e
+
+    # Step 6: Return
+    ret_src = "none"
+    if chunks:
+        ret_src = chunks[0].get("source", "hybrid")
+
+    return {
+        "answer": answer,
+        "sources": chunks,
+        "retrieval_source": ret_src
+    }
 
 
 if __name__ == "__main__":
@@ -196,6 +159,10 @@ if __name__ == "__main__":
         print(f"\n{'='*70}")
         print(f"Q: {q}")
         print("=" * 70)
-        result = generate_with_citation(q)
-        print(f"\nA: {result['answer']}")
-        print(f"\n[Sources: {len(result['sources'])} chunks | via {result['retrieval_source']}]")
+        try:
+            result = generate_with_citation(q)
+            print(f"\nA: {result['answer']}")
+            print(f"\n[Sources: {len(result['sources'])} chunks | via {result['retrieval_source']}]")
+        except Exception as e:
+            print(f"Skipped/Failed: {e}")
+

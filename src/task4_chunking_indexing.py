@@ -52,6 +52,38 @@ VECTOR_STORE = "weaviate"  # "weaviate" | "chromadb" | "faiss"
 # IMPLEMENTATION
 # =============================================================================
 
+import json
+from pathlib import Path
+
+STANDARDIZED_DIR = Path(__file__).parent.parent / "data" / "standardized"
+
+
+# =============================================================================
+# CONFIGURATION — Giải thích lựa chọn của bạn trong comment
+# =============================================================================
+
+# CHUNK_SIZE = 500: Chọn 500 ký tự vì độ dài này tương đương khoảng 2-3 câu dài tiếng Việt,
+# giúp giữ trọn vẹn ngữ nghĩa của một điều luật hoặc một đoạn tin tức mà không làm quá tải
+# context length của LLM hoặc gây loãng thông tin.
+CHUNK_SIZE = 500        
+
+# CHUNK_OVERLAP = 50: Chọn overlap là 50 để đảm bảo các câu từ bị ngắt ở ranh giới các chunk
+# vẫn được kết nối liền mạch, không làm mất ngữ cảnh chuyển tiếp.
+CHUNK_OVERLAP = 50      
+CHUNKING_METHOD = "recursive"
+
+# Sử dụng mô hình text-embedding-004 của Gemini vì hiệu năng tốt, hỗ trợ tiếng Việt xuất sắc,
+# và đúng theo yêu cầu sử dụng API của Gemini từ người dùng.
+EMBEDDING_MODEL = "text-embedding-004"  
+EMBEDDING_DIM = 768
+
+VECTOR_STORE = "local_json"  # Sử dụng file JSON cục bộ làm Vector Store để ổn định nhất
+
+
+# =============================================================================
+# IMPLEMENTATION
+# =============================================================================
+
 def load_documents() -> list[dict]:
     """
     Đọc toàn bộ markdown files từ data/standardized/.
@@ -59,100 +91,71 @@ def load_documents() -> list[dict]:
     Returns:
         List of {'content': str, 'metadata': {'source': str, 'type': str}}
     """
-    # TODO: Iterate qua STANDARDIZED_DIR, đọc .md files
-    # documents = []
-    # for md_file in STANDARDIZED_DIR.rglob("*.md"):
-    #     content = md_file.read_text(encoding="utf-8")
-    #     doc_type = "legal" if "legal" in str(md_file) else "news"
-    #     documents.append({
-    #         "content": content,
-    #         "metadata": {"source": md_file.name, "type": doc_type}
-    #     })
-    # return documents
-    raise NotImplementedError("Implement load_documents")
+    documents = []
+    if not STANDARDIZED_DIR.exists():
+        print(f"⚠ Thư mục {STANDARDIZED_DIR} không tồn tại.")
+        return documents
+
+    for md_file in STANDARDIZED_DIR.rglob("*.md"):
+        content = md_file.read_text(encoding="utf-8")
+        doc_type = "legal" if "legal" in str(md_file.as_posix()) else "news"
+        documents.append({
+            "content": content,
+            "metadata": {"source": md_file.name, "type": doc_type}
+        })
+    return documents
 
 
 def chunk_documents(documents: list[dict]) -> list[dict]:
     """
-    Chunk documents theo strategy đã chọn.
+    Chunk documents theo RecursiveCharacterTextSplitter.
 
     Returns:
         List of {'content': str, 'metadata': dict} — mỗi item là 1 chunk
     """
-    # TODO: Implement chunking
-    #
-    # Ví dụ với RecursiveCharacterTextSplitter:
-    # from langchain_text_splitters import RecursiveCharacterTextSplitter
-    #
-    # splitter = RecursiveCharacterTextSplitter(
-    #     chunk_size=CHUNK_SIZE,
-    #     chunk_overlap=CHUNK_OVERLAP,
-    #     separators=["\n\n", "\n", ". ", " ", ""]
-    # )
-    # chunks = []
-    # for doc in documents:
-    #     splits = splitter.split_text(doc["content"])
-    #     for i, chunk_text in enumerate(splits):
-    #         chunks.append({
-    #             "content": chunk_text,
-    #             "metadata": {**doc["metadata"], "chunk_index": i}
-    #         })
-    # return chunks
-    raise NotImplementedError("Implement chunk_documents")
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=CHUNK_OVERLAP,
+        separators=["\n\n", "\n", ". ", " ", ""]
+    )
+    chunks = []
+    for doc in documents:
+        splits = splitter.split_text(doc["content"])
+        for i, chunk_text in enumerate(splits):
+            chunks.append({
+                "content": chunk_text,
+                "metadata": {**doc["metadata"], "chunk_index": i}
+            })
+    return chunks
 
 
 def embed_chunks(chunks: list[dict]) -> list[dict]:
     """
-    Embed toàn bộ chunks bằng model đã chọn.
-
-    Returns:
-        Mỗi chunk dict được thêm key 'embedding': list[float]
+    Embed toàn bộ chunks bằng Gemini Embedding API.
     """
-    # TODO: Implement embedding
-    #
-    # Ví dụ với sentence-transformers:
-    # from sentence_transformers import SentenceTransformer
-    #
-    # model = SentenceTransformer(EMBEDDING_MODEL)
-    # texts = [c["content"] for c in chunks]
-    # embeddings = model.encode(texts, show_progress_bar=True)
-    # for chunk, emb in zip(chunks, embeddings):
-    #     chunk["embedding"] = emb.tolist()
-    # return chunks
-    raise NotImplementedError("Implement embed_chunks")
+    import sys
+    from pathlib import Path
+    sys.path.append(str(Path(__file__).parent))
+    from gemini_client import get_embedding
+
+    print(f"Embedding {len(chunks)} chunks using Gemini text-embedding-004 API...")
+    for i, chunk in enumerate(chunks, 1):
+        if i % 5 == 0 or i == len(chunks):
+            print(f"  - Embedded {i}/{len(chunks)} chunks...")
+        chunk["embedding"] = get_embedding(chunk["content"])
+    return chunks
 
 
 def index_to_vectorstore(chunks: list[dict]):
     """
-    Lưu chunks vào vector store đã chọn.
+    Lưu chunks vào vector store cục bộ dạng file JSON.
     """
-    # TODO: Implement indexing
-    #
-    # Ví dụ với Weaviate:
-    # import weaviate
-    # from weaviate.classes.config import Configure, Property, DataType
-    #
-    # client = weaviate.connect_to_local()  # hoặc connect_to_weaviate_cloud()
-    #
-    # # Tạo collection
-    # collection = client.collections.create(
-    #     name="DrugLawDocs",
-    #     vectorizer_config=Configure.Vectorizer.none(),
-    #     properties=[
-    #         Property(name="content", data_type=DataType.TEXT),
-    #         Property(name="source", data_type=DataType.TEXT),
-    #         Property(name="doc_type", data_type=DataType.TEXT),
-    #     ]
-    # )
-    #
-    # # Insert chunks
-    # with collection.batch.dynamic() as batch:
-    #     for chunk in chunks:
-    #         batch.add_object(
-    #             properties={"content": chunk["content"], ...},
-    #             vector=chunk["embedding"]
-    #         )
-    raise NotImplementedError("Implement index_to_vectorstore")
+    vector_store_path = Path(__file__).parent.parent / "data" / "vector_store.json"
+    vector_store_path.parent.mkdir(parents=True, exist_ok=True)
+    vector_store_path.write_text(json.dumps(chunks, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"✓ Đã index thành công vào: {vector_store_path}")
 
 
 def run_pipeline():
@@ -170,11 +173,14 @@ def run_pipeline():
     chunks = chunk_documents(docs)
     print(f"✓ Created {len(chunks)} chunks")
 
-    chunks = embed_chunks(chunks)
-    print(f"✓ Embedded {len(chunks)} chunks")
+    try:
+        chunks = embed_chunks(chunks)
+        print(f"✓ Embedded {len(chunks)} chunks")
 
-    index_to_vectorstore(chunks)
-    print("✓ Indexed to vector store")
+        index_to_vectorstore(chunks)
+        print("✓ Indexed to vector store")
+    except Exception as e:
+        print(f"⚠ Lỗi khi embed / index (có thể chưa set GEMINI_API_KEY): {e}")
 
 
 if __name__ == "__main__":
