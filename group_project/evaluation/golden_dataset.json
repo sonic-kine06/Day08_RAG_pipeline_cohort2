@@ -13,5 +13,65 @@
     "question": "Danh mục các chất ma tuý thuộc nhóm I theo quy định pháp luật Việt Nam gồm những chất nào?",
     "expected_answer": "Nhóm I gồm các chất ma tuý tuyệt đối cấm sử dụng trong y học và đời sống, bao gồm heroin, cocaine, methamphetamine, MDMA (ecstasy), cannabis (cần sa), và các chất tương tự.",
     "expected_context": "Nghị định 57/2022/NĐ-CP, Phụ lục I"
+  },
+  {
+    "question": "Tội mua bán trái phép chất ma túy theo Điều 251 Bộ luật Hình sự có mức phạt cơ bản là bao nhiêu?",
+    "expected_answer": "Phạt tù từ 02 năm đến 07 năm cho tội cơ bản đối với hành vi mua bán trái phép chất ma túy.",
+    "expected_context": "Bộ luật Hình sự 2015, Điều 251"
+  },
+  {
+    "question": "Trách nhiệm của gia đình người nghiện ma tuý theo Luật Phòng, chống ma túy 2021 là gì?",
+    "expected_answer": "Gia đình có trách nhiệm theo dõi, giúp đỡ người nghiện; báo cáo với chính quyền địa phương và phối hợp chặt chẽ với cơ quan chức năng để đưa người nghiện đi cai nghiện.",
+    "expected_context": "Luật Phòng chống ma tuý 2021"
+  },
+  {
+    "question": "Cơ quan nào có thẩm quyền quản lý nhà nước về phòng, chống ma túy tại Việt Nam?",
+    "expected_answer": "Bộ Công an chịu trách nhiệm trước Chính phủ chủ trì, phối hợp với các bộ, ngành liên quan để thực hiện quản lý nhà nước về phòng, chống ma túy.",
+    "expected_context": "Luật Phòng chống ma tuý 2021"
+  },
+  {
+    "question": "Tin tức tiêu biểu nào gần đây về người nổi tiếng liên quan đến ma túy?",
+    "expected_answer": "Có nhiều tin tức bắt giữ các đối tượng nổi tiếng, ca sĩ vì hành vi tàng trữ và tổ chức sử dụng trái phép chất ma túy tại nhà riêng hoặc cơ sở giải trí.",
+    "expected_context": "Tin tức báo chí (article_01.md)"
+  },
+  {
+    "question": "Tội tổ chức sử dụng trái phép chất ma túy bị xử phạt như thế nào?",
+    "expected_answer": "Theo Bộ luật Hình sự, người nào tổ chức sử dụng trái phép chất ma túy bị phạt tù từ 02 năm đến 07 năm. Nếu phạm tội nhiều lần hoặc với nhiều người, mức phạt có thể từ 07 năm đến 15 năm.",
+    "expected_context": "Bộ luật Hình sự 2015, Điều 255"
+  },
+  {
+    "question": "Cai nghiện bắt buộc áp dụng cho những đối tượng nào?",
+    "expected_answer": "Áp dụng cho người từ đủ 18 tuổi trở lên là người nghiện ma túy không đăng ký, không thực hiện cai nghiện tự nguyện, hoặc bị phát hiện sử dụng trái phép chất ma túy trong thời gian quản lý sau cai.",
+    "expected_context": "Luật Phòng chống ma tuý 2021"
+  },
+  {
+    "question": "Thời gian cai nghiện bắt buộc tại cơ sở cai nghiện là bao lâu?",
+    "expected_answer": "Thời hạn chấp hành quyết định đưa vào cơ sở cai nghiện bắt buộc là từ 12 tháng đến 24 tháng.",
+    "expected_context": "Luật Phòng chống ma tuý 2021"
+  },
+  {
+    "question": "Nghị định 105/2021/NĐ-CP quy định chi tiết về vấn đề gì?",
+    "expected_answer": "Nghị định 105/2021/NĐ-CP quy định chi tiết và hướng dẫn thi hành một số điều của Luật Phòng, chống ma túy liên quan đến công tác quản lý người sử dụng trái phép chất ma túy và cai nghiện ma túy.",
+    "expected_context": "Nghị định 105/2021/NĐ-CP"
+  },
+  {
+    "question": "Người từ đủ 12 tuổi đến dưới 18 tuổi có bị áp dụng biện pháp cai nghiện bắt buộc không?",
+    "expected_answer": "Có, người từ đủ 12 tuổi đến dưới 18 tuổi là người nghiện ma túy vẫn có thể bị đưa vào cơ sở cai nghiện bắt buộc nếu thuộc các trường hợp pháp luật quy định, với thời gian từ 06 đến 12 tháng.",
+    "expected_context": "Luật Phòng chống ma tuý 2021"
+  },
+  {
+    "question": "Cơ quan nào có thẩm quyền ra quyết định đưa người nghiện vào cơ sở cai nghiện bắt buộc?",
+    "expected_answer": "Tòa án nhân dân cấp huyện có thẩm quyền xem xét, ra quyết định đưa người nghiện ma túy vào cơ sở cai nghiện bắt buộc.",
+    "expected_context": "Luật Phòng chống ma tuý 2021"
+  },
+  {
+    "question": "Theo pháp luật Việt Nam, trồng cây có chứa chất ma túy bị xử lý ra sao?",
+    "expected_answer": "Tội trồng cây thuốc phiện, cây côca, cây cần sa hoặc các loại cây khác có chứa chất ma túy có thể bị phạt tù từ 06 tháng đến 03 năm nếu đã bị xử phạt vi phạm hành chính hoặc trồng với số lượng lớn.",
+    "expected_context": "Bộ luật Hình sự 2015, Điều 247"
+  },
+  {
+    "question": "Sử dụng trái phép chất ma túy có bị đi tù không?",
+    "expected_answer": "Hành vi sử dụng trái phép chất ma túy hiện nay bị xử phạt vi phạm hành chính (phạt tiền) và bị lập hồ sơ quản lý, cai nghiện chứ không bị truy cứu trách nhiệm hình sự (không bị đi tù).",
+    "expected_context": "Bộ luật Hình sự 2015 và Luật Phòng chống ma tuý 2021"
   }
 ]
